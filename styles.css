@@ -1,0 +1,130 @@
+/* Palet Warna & Font */
+:root {
+    --color-black: #000000;
+    --color-dark-bg: #0A0A0A; /* Lebih gelap untuk kontras maksimum */
+    --color-yellow-neon: #FFD700; /* Kuning Emas/Neon yang lebih tajam */
+    --color-white-text: #F0F0F0;
+    --color-block-fill: #FFEB3B; 
+    --color-block-border: #8B7300; /* Border Balok yang lebih gelap */
+    --glow-strength: 0 0 15px rgba(255, 215, 0, 0.7); /* Efek glow profesional */
+}
+
+/* Reset dan Body */
+body {
+    font-family: 'Consolas', monospace; 
+    background-color: var(--color-dark-bg);
+    color: var(--color-white-text);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden; /* Pastikan tidak ada scrollbar */
+}
+
+/* Kontainer Utama Game */
+.game-container {
+    display: flex;
+    gap: 60px; /* Spacing lebih besar, terlihat lebih profesional */
+    padding: 40px;
+    background-color: var(--color-black); /* Box utama hitam pekat */
+    border: 1px solid var(--color-yellow-neon); 
+    box-shadow: var(--glow-strength);
+}
+
+/* Papan Permainan Tetris */
+#game-board {
+    width: 250px; 
+    height: 500px; 
+    background-color: #111; /* Latar belakang papan sedikit berbeda dari box container */
+    border: 3px solid var(--color-yellow-neon); 
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); 
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(20, 1fr);
+}
+
+/* Desain Blok/Sel */
+.cell {
+    /* Hapus border dashed untuk tampilan yang lebih bersih */
+    box-sizing: border-box;
+    /* Grid background effect halus (opsional: tambahkan background-image untuk efek circuit) */
+}
+.block, .next-block {
+    background-color: var(--color-block-fill);
+    border: 1px solid var(--color-block-border);
+    /* Efek neon block */
+    box-shadow: 0 0 5px var(--color-yellow-neon); 
+}
+
+/* Panel Info (Skor & Next Piece) */
+.info-panel {
+    width: 180px; /* Lebar lebih rapi */
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+.score-box {
+    background-color: #000;
+    border: 1px solid var(--color-yellow-neon);
+    padding: 15px;
+    text-align: left;
+}
+.score-box h3 {
+    color: var(--color-yellow-neon); /* Judul Kuning Neon */
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    letter-spacing: 3px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+}
+.score-box p {
+    font-size: 48px; /* Ukuran skor lebih besar */
+    color: var(--color-white-text);
+    font-weight: 700;
+    margin: 5px 0 0 0;
+}
+.score-box:last-of-type p {
+    font-size: 24px; /* Kecilkan ukuran teks lain jika ada */
+}
+
+/* Next Block Container Styling */
+#next-piece-container {
+    width: 100%;
+    /* Display grid 4x4 */
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    background-color: #111;
+    border: 1px solid #333;
+    aspect-ratio: 1 / 1; /* Pastikan persegi */
+    padding: 5px;
+    box-sizing: border-box;
+}
+.next-cell {
+    box-sizing: border-box;
+}
+
+/* Tombol Aksi */
+.action-btn {
+    width: 100%;
+    padding: 18px 10px; /* Padding lebih besar, terlihat premium */
+    border: none;
+    background-color: var(--color-yellow-neon);
+    color: var(--color-black);
+    font-size: 20px;
+    font-weight: 900;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+.action-btn:hover {
+    background-color: #FFFF00;
+    box-shadow: 0 0 10px var(--color-yellow-neon);
+}
+.action-btn:disabled {
+    background-color: #333;
+    color: #666;
+    cursor: not-allowed;
+}
