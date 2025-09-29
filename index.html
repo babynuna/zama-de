@@ -3,32 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cipher Blocks | Tetris</title>
+    <title>Zama Tetris | Cipher Blocks</title>
+    <!-- Hubungkan ke file CSS untuk gaya neon/cyber -->
     <link rel="stylesheet" href="styles.css">
+    <!-- Font Inter dari Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     
-    <main class="game-container">
-        <div id="game-board"></div>
+    <!-- ENCRYPTED BACKGROUND: Konten diisi dan diatur posisinya oleh app.js -->
+    <div class="encrypted-background">
+        <!-- Logo Besar yang Bergerak Halus -->
+        <div id="floating-logo">ZAMA</div> 
+        <!-- Area ini akan diisi dengan karakter acak oleh JavaScript -->
+    </div> 
+    
+    <!-- HEADER: Zama Tetris -->
+    <header class="system-header">
+        <div class="logo-container">
+            <span class="system-status">[ SYSTEM ONLINE ]</span>
+            <div class="logo">ZAMA TETRIS</div> 
+        </div>
+        <div class="user-status">
+            <span class="stat-item">TIME: <span id="current-time" class="data-value">00:00:00</span></span>
+            <span class="stat-item">LVL: <span class="data-value">01</span></span>
+        </div>
+    </header>
 
+    <!-- MAIN GAME CONTAINER -->
+    <main class="game-container">
+        <!-- Papan Game -->
+        <div id="game-board"></div>
+        
+        <!-- Panel Info dan Kontrol -->
         <div class="info-panel">
             <div class="score-box">
                 <h3>SCORE</h3>
                 <p id="score">0</p>
             </div>
-            
             <div class="score-box">
                 <h3>NEXT BLOCK</h3>
-                <div id="next-piece-container">
-                    </div>
+                <div id="next-piece-container"></div>
             </div>
-
             <div class="game-controls">
                 <button id="start-button" class="action-btn">START GAME</button>
+                <div class="controls-hint">
+                    <p>↑ Rotate | ←→ Move | ↓ Falling Fast</p>
+                </div>
             </div>
         </div>
     </main>
 
+    <!-- FOOTER: Status Protokol & Pencipta -->
+    <footer class="system-footer">
+        <p class="footer-text">PROTOCOL ID: <span class="key-id">ZAMA-TTRIS-BETA</span></p>
+        <p class="footer-text creator-info">CREATED BY: <span class="key-id">Baby Nuna</span></p>
+        <p class="footer-text status-right">STATUS: <span class="status-indicator">DECRYPTING DATA STREAM</span></p>
+    </footer>
+    
+    <!-- Modal untuk pesan Game Over/Peringatan -->
+    <div id="game-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 id="modal-title">GAME OVER</h2>
+            <p id="modal-message">Data Stream Corrupted. Final Score: <span id="modal-score">0</span></p>
+            <button class="action-btn" onclick="closeModal()">OK / RESTART</button>
+        </div>
+    </div>
+
+    <!-- Tone.js Library (WAJIB ADA untuk suara) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

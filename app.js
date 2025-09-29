@@ -5,10 +5,15 @@ const boardElement = document.getElementById('game-board');
 const scoreElement = document.getElementById('score');
 const startButton = document.getElementById('start-button');
 const nextPieceContainer = document.getElementById('next-piece-container'); 
+const currentTimeElement = document.getElementById('current-time'); 
+const encryptedBackgroundElement = document.querySelector('.encrypted-background'); 
+const floatingLogoElement = document.getElementById('floating-logo'); 
+const gameModal = document.getElementById('game-modal');
+const modalScoreElement = document.getElementById('modal-score');
 
 let score = 0;
-let gameLoopInterval = null; // Inisialisasi null untuk cek Pause yang lebih baik
-let isPaused = false; 
+let gameLoopInterval = null;
+let isPaused = true; 
 let currentPiece;
 let nextPiece; 
 let currentX;
@@ -25,34 +30,231 @@ const TETROMINOS = [
     [[1, 1, 0], [0, 1, 1]], // Z
 ];
 
-// Inisialisasi balok pertama kali
 nextPiece = TETROMINOS[Math.floor(Math.random() * TETROMINOS.length)];
 
-// 1. Inisialisasi Papan Permainan
+
+// ====================================
+// 🎧 AUDIO SETUP (TONE.JS)
+// ====================================
+
+// 1. Move/Rotate Sound (Beep frekuensi tinggi yang cepat)
+const moveSynth = new Tone.MembraneSynth({
+    pitchDecay: 0.005,
+    octaves: 2,
+    envelope: { attack: 0.001, decay: 0.1, sustain: 0.0, release: 0.01 }
+}).toDestination();
+
+// 2. Lock Sound (Blip nada rendah saat balok mendarat)
+const lockSynth = new Tone.PluckSynth({
+    attackNoise: 1, dampening: 2000, resonance: 0.7
+}).toDestination();
+
+// 3. Line Clear Sound (Chord naik seperti sinyal decryption success)
+const clearSynth = new Tone.PolySynth(Tone.AMSynth, {
+    oscillator: { type: "sine" },
+    envelope: { attack: 0.02, decay: 0.1, sustain: 0.05, release: 0.2 }
+}).toDestination();
+
+// 4. Start/Restart Sound (Konfirmasi)
+const startSynth = new Tone.Synth({
+    oscillator: { type: "square" },
+    envelope: { attack: 0.01, decay: 0.05, sustain: 0.0, release: 0.1 }
+}).toDestination();
+
+// 5. Game Over Sound (Dramatis, Noise Descending)
+const gameOverSynth = new Tone.NoiseSynth({
+    noise: { type: "pink" },
+    envelope: { attack: 0.001, decay: 0.7, sustain: 0.0, release: 1.5 }
+}).toDestination();
+
+
+// FUNGSI AUDIO KHUSUS
+
+function initializeAudioContext() {
+    // Memastikan Tone.js dimulai setelah interaksi pengguna (klik tombol)
+    if (Tone.context.state !== 'running') {
+        Tone.start();
+    }
+}
+
+function playMoveSound() {
+    if (Tone.context.state !== 'running') return;
+    moveSynth.triggerAttackRelease("C5", "32n"); // Suara gerakan/rotasi
+}
+
+function playLockSound() {
+    if (Tone.context.state !== 'running') return;
+    lockSynth.triggerAttackRelease("C2", "8n"); // Suara balok mendarat
+}
+
+function playClearSound(linesCleared) {
+    if (Tone.context.state !== 'running') return;
+    const baseNote = "G4";
+    // Notes naik: G4, C5, E5, G5
+    const notes = [baseNote, "C5", "E5", "G5"]; 
+    const finalNote = notes[linesCleared - 1] || "G5";
+    clearSynth.triggerAttackRelease([baseNote, finalNote], "4n"); // Chord sukses
+}
+
+function playStartSound() {
+    if (Tone.context.state !== 'running') return;
+    startSynth.triggerAttackRelease("G5", "16n"); // Suara game start
+}
+
+function playGameOverSound() {
+    if (Tone.context.state !== 'running') return;
+    // 1. Noise yang panjang
+    gameOverSynth.triggerAttackRelease("1n");
+    // 2. Nada descending yang pendek
+    const notes = ["C3", "G2", "C2"];
+    clearSynth.triggerAttackRelease(notes, "2n", Tone.now(), 0.5); 
+}
+
+// ====================================
+// FUNGSI UTAMA UI & ANIMASI
+// ====================================
+
+function showModal(title, message, finalScore) {
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-message').innerHTML = message.replace('0', `<span id="modal-score">${finalScore}</span>`);
+    gameModal.classList.remove('hidden');
+}
+
+function closeModal() {
+    gameModal.classList.add('hidden');
+    // Jika modal ditutup setelah game over, kita restart game
+    if (startButton.textContent === 'RESTART GAME') {
+        startGame();
+    }
+}
+window.closeModal = closeModal; 
+
+function updateClock() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    if (currentTimeElement) {
+        currentTimeElement.textContent = `${hours}:${minutes}:${seconds}`;
+    }
+}
+
+function triggerScoreGlitch() {
+    scoreElement.classList.add('glitch-active');
+    setTimeout(() => {
+        scoreElement.classList.remove('glitch-active');
+    }, 200); 
+}
+
+// Animasi Latar Belakang (Kode identik dengan file sebelumnya)
+function createRandomBackgroundCharacters() {
+    if (!encryptedBackgroundElement) return;
+    clearInterval(window.flickerInterval); 
+    encryptedBackgroundElement.querySelectorAll('.flickering-char').forEach(char => char.remove());
+
+    const characters = "0123456789ABCDEF "; 
+    const numCharacters = 500; 
+    const charSize = 20; 
+    const now = Date.now();
+
+    for (let i = 0; i < numCharacters; i++) {
+        const span = document.createElement('span');
+        span.textContent = characters[Math.floor(Math.random() * characters.length)]; 
+        span.classList.add('flickering-char'); 
+        span.style.left = `${Math.random() * window.innerWidth}px`;
+        span.style.top = `${Math.random() * window.innerHeight}px`;
+        span.style.fontSize = `${charSize + Math.random() * 5}px`; 
+        
+        const delay = Math.random() * 5000; 
+        span.dataset.flickerTime = now + delay + (Math.random() * 1000 + 500); 
+        span.dataset.hideTime = parseFloat(span.dataset.flickerTime) + (Math.random() * 1000 + 500); 
+
+        encryptedBackgroundElement.appendChild(span);
+    }
+    window.flickerInterval = setInterval(animateFlickerTeleport, 50); 
+}
+
+function animateFlickerTeleport() {
+    const chars = encryptedBackgroundElement.querySelectorAll('.flickering-char');
+    const now = Date.now();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    chars.forEach(span => {
+        const flickerTime = parseFloat(span.dataset.flickerTime);
+        const hideTime = parseFloat(span.dataset.hideTime);
+        
+        if (now < flickerTime) {
+             span.style.opacity = 0; 
+        } else if (now < hideTime) {
+            span.style.opacity = (Math.random() > 0.3) ? 1 : 0.5; 
+        } else {
+            span.style.left = `${Math.random() * viewportWidth}px`;
+            span.style.top = `${Math.random() * viewportHeight}px`;
+            const characters = "0123456789ABCDEF ";
+            span.textContent = characters[Math.floor(Math.random() * characters.length)]; 
+
+            const cycleDuration = Math.random() * 2000 + 1000; 
+            span.dataset.flickerTime = now + (Math.random() * cycleDuration); 
+            span.dataset.hideTime = parseFloat(span.dataset.flickerTime) + (Math.random() * 1500 + 500); 
+        }
+    });
+}
+
+let logoNextUpdate = Date.now(); 
+
+function setRandomLogoTarget() {
+    if (!floatingLogoElement) return;
+    
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    const margin = 150;
+    const targetX = Math.random() * (viewportWidth - 2 * margin) + margin;
+    const targetY = Math.random() * (viewportHeight - 2 * margin) + margin;
+    
+    const duration = Math.random() * 10 + 10; 
+    
+    floatingLogoElement.style.transitionDuration = `${duration}s`;
+    floatingLogoElement.style.left = `${targetX}px`;
+    floatingLogoElement.style.top = `${targetY}px`;
+    
+    logoNextUpdate = Date.now() + (duration * 1000);
+}
+
+function animateFloatingLogoLoop() {
+    if (!floatingLogoElement) return;
+    if (Date.now() >= logoNextUpdate) {
+        setRandomLogoTarget();
+    }
+    requestAnimationFrame(animateFloatingLogoLoop);
+}
+// ---------------------------------------------------
+
+// ====================================
+// FUNGSI GAME LOGIC
+// ====================================
+
 function initBoard() {
     boardElement.innerHTML = '';
     for (let y = 0; y < BOARD_HEIGHT; y++) {
-        board[y] = Array(BOARD_WIDTH).fill(0); // Inisialisasi array board
+        board[y] = Array(BOARD_WIDTH).fill(0);
         for (let x = 0; x < BOARD_WIDTH; x++) {
             const cell = document.createElement('div');
             cell.classList.add('cell');
             boardElement.appendChild(cell);
         }
     }
-    // Inisialisasi grid Next Piece
     nextPieceContainer.innerHTML = '';
-    for(let i = 0; i < 16; i++) { // 4x4 grid
+    for(let i = 0; i < 16; i++) { 
         const cell = document.createElement('div');
         cell.classList.add('next-cell');
         nextPieceContainer.appendChild(cell);
     }
 }
 
-// 2. Spawm Balok Baru (Perbaikan: pastikan balok saat ini diisi dari nextPiece)
 function spawnPiece() {
     currentPiece = nextPiece; 
-    
-    // Tentukan balok baru untuk "Next Block"
     nextPiece = TETROMINOS[Math.floor(Math.random() * TETROMINOS.length)]; 
 
     currentX = Math.floor(BOARD_WIDTH / 2) - Math.floor(currentPiece[0].length / 2);
@@ -67,16 +269,12 @@ function spawnPiece() {
     return true;
 }
 
-// 3. Gambar Next Block (Perbaikan: Menggunakan 4x4 grid di HTML)
 function drawNextPiece() {
-    // Bersihkan tampilan next block
     nextPieceContainer.querySelectorAll('.next-cell').forEach(cell => cell.classList.remove('next-block'));
 
-    // Gambar balok berikutnya
     for (let y = 0; y < nextPiece.length; y++) {
         for (let x = 0; x < nextPiece[y].length; x++) {
             if (nextPiece[y][x]) {
-                // Posisi di grid 4x4 Next Piece
                 const index = y * 4 + x; 
                 if (nextPieceContainer.children[index]) {
                     nextPieceContainer.children[index].classList.add('next-block');
@@ -86,13 +284,9 @@ function drawNextPiece() {
     }
 }
 
-
-// 4. Gambar Papan dan Balok (Tidak berubah signifikan)
 function draw() {
-    // Hapus Balok Lama dari tampilan grid
     boardElement.querySelectorAll('.cell').forEach(cell => cell.classList.remove('block'));
 
-    // Gambar Balok yang Sudah Terkunci (Board)
     for (let y = 0; y < BOARD_HEIGHT; y++) {
         for (let x = 0; x < BOARD_WIDTH; x++) {
             const index = y * BOARD_WIDTH + x;
@@ -102,7 +296,6 @@ function draw() {
         }
     }
 
-    // Gambar Balok Saat Ini (Current Piece)
     for (let y = 0; y < currentPiece.length; y++) {
         for (let x = 0; x < currentPiece[y].length; x++) {
             if (currentPiece[y][x]) {
@@ -117,7 +310,6 @@ function draw() {
     }
 }
 
-// 5. Cek Tabrakan (Tidak berubah)
 function checkCollision(dx, dy, piece = currentPiece) {
     for (let y = 0; y < piece.length; y++) {
         for (let x = 0; x < piece[y].length; x++) {
@@ -137,7 +329,6 @@ function checkCollision(dx, dy, piece = currentPiece) {
     return false;
 }
 
-// 6. Kunci Balok & Clear Lines (Tidak berubah signifikan)
 function lockPiece() {
     for (let y = 0; y < currentPiece.length; y++) {
         for (let x = 0; x < currentPiece[y].length; x++) {
@@ -150,6 +341,7 @@ function lockPiece() {
             }
         }
     }
+    playLockSound(); 
     clearLines();
     if (spawnPiece()) {
         draw();
@@ -169,15 +361,21 @@ function clearLines() {
     if (linesCleared > 0) {
         score += linesCleared * 100;
         scoreElement.textContent = score;
+        triggerScoreGlitch();
+        playClearSound(linesCleared); 
     }
 }
 
-// 7. Logika Pergerakan & Drop (Tidak berubah)
 function movePiece(dx, dy) {
     if (!checkCollision(dx, dy)) {
         currentX += dx;
         currentY += dy;
         draw();
+        
+        // Memainkan suara hanya saat input pengguna, bukan drop otomatis
+        if (dx !== 0 || dy !== 1) {
+             playMoveSound(); 
+        }
         return true;
     }
     return false;
@@ -190,30 +388,30 @@ function dropPiece() {
 }
 
 function rotatePiece() {
-    // Logika Rotasi... (tetap sama)
     const originalPiece = currentPiece;
     const newPiece = originalPiece[0].map((_, colIndex) => originalPiece.map(row => row[colIndex]).reverse());
 
     if (!checkCollision(0, 0, newPiece)) {
         currentPiece = newPiece;
         draw();
+        playMoveSound(); 
     }
 }
 
-// 8. Game Over
 function gameOver() {
+    playGameOverSound(); 
     clearInterval(gameLoopInterval);
     gameLoopInterval = null;
     isPaused = true;
-    alert(`Game Over! Final Score: ${score}.`);
     startButton.textContent = 'RESTART GAME';
+    // Menampilkan modal game over
+    showModal('GAME OVER', `Data Stream Corrupted. Final Score: 0`, score);
 }
 
-// 9. Fungsi Toggle Pause (Perbaikan: Menggunakan gameLoopInterval untuk cek status)
 function togglePause() {
     if (gameLoopInterval) {
         clearInterval(gameLoopInterval);
-        gameLoopInterval = null; // Penting: set ke null saat pause
+        gameLoopInterval = null; 
         isPaused = true;
         startButton.textContent = 'RESUME';
     } else if (isPaused && startButton.textContent === 'RESUME') {
@@ -223,8 +421,14 @@ function togglePause() {
     }
 }
 
-// 10. Fungsi Mulai Game
 function startGame() {
+    // Memulai audio context saat interaksi pengguna (klik tombol)
+    initializeAudioContext();
+    playStartSound(); 
+
+    // Tutup modal jika masih terbuka
+    gameModal.classList.add('hidden');
+    
     score = 0;
     scoreElement.textContent = score;
     initBoard();
@@ -236,7 +440,10 @@ function startGame() {
     }
 }
 
-// 11. Event Listener Tombol Start
+// ====================================
+// EVENT LISTENERS
+// ====================================
+
 startButton.addEventListener('click', () => {
     if (startButton.textContent === 'START GAME' || startButton.textContent === 'RESTART GAME') {
         startGame();
@@ -245,11 +452,15 @@ startButton.addEventListener('click', () => {
     }
 });
 
-// 12. Kontrol Keyboard (Mengizinkan pergerakan hanya saat game aktif dan tidak di-pause)
 document.addEventListener('keydown', (e) => {
+    // Menutup modal jika tombol apa pun ditekan saat game over
+    if (!gameModal.classList.contains('hidden')) {
+        closeModal();
+        return; 
+    }
+    
     if (!gameLoopInterval || isPaused) return; 
     
-    // Cegah scroll saat tekan panah
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
     }
@@ -262,12 +473,16 @@ document.addEventListener('keydown', (e) => {
             movePiece(1, 0);
             break;
         case 'ArrowDown':
-            dropPiece();
+            // Fast drop: mereset interval agar drop otomatis tidak terlalu cepat
+            if (movePiece(0, 1)) {
+                 clearInterval(gameLoopInterval);
+                 gameLoopInterval = setInterval(dropPiece, 1000); 
+            }
             break;
         case 'ArrowUp':
             rotatePiece();
             break;
-        case 'Escape': // Gunakan Escape untuk pause cepat
+        case 'Escape':
             togglePause();
             break;
     }
@@ -276,3 +491,17 @@ document.addEventListener('keydown', (e) => {
 // --- Inisialisasi Awal ---
 initBoard();
 drawNextPiece();
+setInterval(updateClock, 1000); 
+updateClock(); 
+
+// Panggil fungsi background acak saat dimuat
+createRandomBackgroundCharacters();
+window.addEventListener('resize', createRandomBackgroundCharacters);
+
+// Mulai animasi logo yang bergerak halus
+if (floatingLogoElement) {
+    floatingLogoElement.style.left = `${window.innerWidth / 2}px`;
+    floatingLogoElement.style.top = `${window.innerHeight / 2}px`;
+    setRandomLogoTarget(); 
+    animateFloatingLogoLoop(); 
+}

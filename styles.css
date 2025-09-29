@@ -1,130 +1,408 @@
-/* Palet Warna & Font */
+/* Variabel Warna Neon (Kuning/Hitam Dominan) */
 :root {
-    --color-black: #000000;
-    --color-dark-bg: #0A0A0A; /* Lebih gelap untuk kontras maksimum */
-    --color-yellow-neon: #FFD700; /* Kuning Emas/Neon yang lebih tajam */
-    --color-white-text: #F0F0F0;
-    --color-block-fill: #FFEB3B; 
-    --color-block-border: #8B7300; /* Border Balok yang lebih gelap */
-    --glow-strength: 0 0 15px rgba(255, 215, 0, 0.7); /* Efek glow profesional */
+    --color-primary: #ffff00; /* Neon Yellow/Gold (Dominan) */
+    --color-secondary: #ffaa00; /* Orange Accent (Kontras Sekunder) */
+    --color-background: #000000; /* Pure Black */
+    --color-text: #ffffff;
+    --color-border: #333;
+    --shadow-neon: 0 0 5px var(--color-primary), 0 0 10px var(--color-primary);
+    --shadow-active: 0 0 8px var(--color-secondary), 0 0 15px var(--color-secondary);
+    --max-content-width: 900px; /* Lebar konten utama yang terpusat */
 }
 
-/* Reset dan Body */
-body {
-    font-family: 'Consolas', monospace; 
-    background-color: var(--color-dark-bg);
-    color: var(--color-white-text);
+* {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    overflow: hidden; /* Pastikan tidak ada scrollbar */
+    font-family: 'Inter', sans-serif;
+    color: var(--color-text);
 }
 
-/* Kontainer Utama Game */
+body {
+    background-color: var(--color-background);
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    min-height: 100vh; /* Penting: Memastikan body setinggi viewport */
+    overflow-x: hidden; 
+    position: relative;
+    width: 100%; 
+}
+
+/* ------------------------------------- */
+/* PENYESUAIAN TATA LETAK UTAMA */
+/* ------------------------------------- */
+
+.full-width-header-wrapper {
+    width: 100%;
+    border-bottom: 1px solid var(--color-border);
+    border-top: 3px solid var(--color-primary);
+    /* Tidak ada margin-bottom di sini */
+}
+
+/* MAIN GAME CONTAINER (Centered Presisi) */
 .game-container {
     display: flex;
-    gap: 60px; /* Spacing lebih besar, terlihat lebih profesional */
-    padding: 40px;
-    background-color: var(--color-black); /* Box utama hitam pekat */
-    border: 1px solid var(--color-yellow-neon); 
-    box-shadow: var(--glow-strength);
+    gap: 30px;
+    background: rgba(15, 15, 15, 0.8);
+    border: 2px solid var(--color-primary);
+    box-shadow: var(--shadow-neon);
+    padding: 20px;
+    border-radius: 10px;
+    max-width: var(--max-content-width); 
+    
+    /* Perubahan Kunci untuk Pemusatan Presisi */
+    flex-grow: 0; /* Menggunakan ukuran alaminya */
+    margin: auto; /* Memastikan game container terpusat vertikal dan horizontal di sisa ruang */
+
+    justify-content: center; 
+    align-items: center; 
 }
 
-/* Papan Permainan Tetris */
+/* FOOTER WRAPPER (Full-Width) */
+.full-width-footer-wrapper {
+    width: 100%; 
+    border-top: 1px solid var(--color-border);
+    border-bottom: 3px solid var(--color-primary);
+    font-size: 0.75rem;
+    padding: 5px 0;
+    margin-top: 0; /* Menghapus auto margin, centering sudah diatur oleh game-container */
+}
+
+
+/* ------------------------------------- */
+/* HEADER & FOOTER FULL WIDTH (Detail) */
+/* ------------------------------------- */
+
+.full-width-header-wrapper, .full-width-footer-wrapper {
+    width: 100%; 
+    background-color: var(--color-background);
+}
+
+.system-header, .system-footer {
+    width: 100%;
+    max-width: var(--max-content-width); 
+    margin: 0 auto; 
+    padding: 10px 20px; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--color-primary);
+    text-shadow: 0 0 3px var(--color-primary);
+}
+
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: 2px;
+}
+
+.system-status {
+    color: #00ff00;
+    text-shadow: 0 0 5px #00ff00;
+    margin-right: 10px;
+    font-size: 0.7rem;
+}
+
+.key-id, .data-value {
+    color: var(--color-secondary); 
+    text-shadow: 0 0 3px var(--color-secondary);
+}
+
+.status-indicator {
+    color: var(--color-primary); 
+    animation: pulse 1.5s infinite alternate;
+}
+
+@keyframes pulse {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+}
+
+/* ------------------------------------- */
+/* BACKGROUND ENCRYPTED CHARACTERS */
+/* ------------------------------------- */
+
+.encrypted-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1;
+    opacity: 0.1; 
+}
+
+.flickering-char {
+    position: absolute;
+    color: var(--color-secondary); 
+    pointer-events: none;
+    user-select: none;
+    transition: opacity 0.05s ease-in-out;
+    text-shadow: 0 0 2px var(--color-secondary);
+}
+
+#floating-logo {
+    position: absolute;
+    font-size: 15vh;
+    font-weight: 700;
+    opacity: 0.05;
+    color: var(--color-primary);
+    text-shadow: var(--shadow-neon);
+    user-select: none;
+    pointer-events: none;
+    transition: left 15s linear, top 15s linear; 
+    will-change: transform;
+}
+
+
+/* ------------------------------------- */
+/* BOARD & BLOCKS */
+/* ------------------------------------- */
+
 #game-board {
-    width: 250px; 
-    height: 500px; 
-    background-color: #111; /* Latar belakang papan sedikit berbeda dari box container */
-    border: 3px solid var(--color-yellow-neon); 
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); 
     display: grid;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(20, 1fr);
+    width: 300px; 
+    height: 600px; 
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--color-primary);
+    box-shadow: inset 0 0 5px var(--color-primary);
 }
 
-/* Desain Blok/Sel */
 .cell {
-    /* Hapus border dashed untuk tampilan yang lebih bersih */
-    box-sizing: border-box;
-    /* Grid background effect halus (opsional: tambahkan background-image untuk efek circuit) */
-}
-.block, .next-block {
-    background-color: var(--color-block-fill);
-    border: 1px solid var(--color-block-border);
-    /* Efek neon block */
-    box-shadow: 0 0 5px var(--color-yellow-neon); 
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.05); 
 }
 
-/* Panel Info (Skor & Next Piece) */
+.block {
+    background: var(--color-primary); 
+    border: 1px solid var(--color-secondary); 
+    box-shadow: 0 0 5px var(--color-primary), inset 0 0 5px var(--color-secondary);
+    transition: background 0.1s, box-shadow: 0.1s;
+    animation: block-flicker 0.1s infinite alternate; 
+}
+
+@keyframes block-flicker {
+    from { opacity: 0.9; }
+    to { opacity: 1; }
+}
+
+/* ------------------------------------- */
+/* INFO PANEL & CONTROLS */
+/* ------------------------------------- */
+
 .info-panel {
-    width: 180px; /* Lebar lebih rapi */
     display: flex;
     flex-direction: column;
-    gap: 40px;
-}
-.score-box {
-    background-color: #000;
-    border: 1px solid var(--color-yellow-neon);
-    padding: 15px;
-    text-align: left;
-}
-.score-box h3 {
-    color: var(--color-yellow-neon); /* Judul Kuning Neon */
-    margin: 0 0 8px 0;
-    font-size: 16px;
-    letter-spacing: 3px;
-    border-bottom: 1px solid #333;
-    padding-bottom: 5px;
-}
-.score-box p {
-    font-size: 48px; /* Ukuran skor lebih besar */
-    color: var(--color-white-text);
-    font-weight: 700;
-    margin: 5px 0 0 0;
-}
-.score-box:last-of-type p {
-    font-size: 24px; /* Kecilkan ukuran teks lain jika ada */
+    gap: 20px;
+    width: 150px;
+    padding: 10px;
 }
 
-/* Next Block Container Styling */
+.score-box {
+    border: 1px solid var(--color-border);
+    padding: 10px;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.score-box h3 {
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: var(--color-primary);
+    text-shadow: var(--shadow-neon);
+    margin-bottom: 5px;
+}
+
+#score {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-primary); 
+    text-shadow: var(--shadow-neon);
+}
+
+.glitch-active {
+    animation: glitch-color 0.1s infinite alternate;
+}
+
+@keyframes glitch-color {
+    0% { text-shadow: 2px 0 var(--color-primary), -2px 0 var(--color-secondary); }
+    50% { text-shadow: -2px 0 var(--color-primary), 2px 0 var(--color-secondary); }
+    100% { text-shadow: 1px 0 var(--color-primary), -1px 0 var(--color-secondary); }
+}
+
 #next-piece-container {
-    width: 100%;
-    /* Display grid 4x4 */
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(4, 1fr);
-    background-color: #111;
-    border: 1px solid #333;
-    aspect-ratio: 1 / 1; /* Pastikan persegi */
+    width: 100px;
+    height: 100px;
+    margin-top: 10px;
+    border: 1px dashed var(--color-border);
     padding: 5px;
-    box-sizing: border-box;
-}
-.next-cell {
-    box-sizing: border-box;
 }
 
-/* Tombol Aksi */
+.next-cell {
+    width: 20px;
+    height: 20px;
+}
+
+.next-block {
+    background: var(--color-primary); 
+    box-shadow: var(--shadow-neon);
+    border: none;
+}
+
 .action-btn {
     width: 100%;
-    padding: 18px 10px; /* Padding lebih besar, terlihat premium */
-    border: none;
-    background-color: var(--color-yellow-neon);
-    color: var(--color-black);
-    font-size: 20px;
-    font-weight: 900;
+    padding: 10px 0;
+    background: var(--color-primary); 
+    color: var(--color-background); 
+    border: 2px solid var(--color-primary);
+    border-radius: 5px;
+    text-transform: uppercase;
+    font-weight: 700;
     cursor: pointer;
-    letter-spacing: 1px;
-    transition: background-color 0.2s, box-shadow 0.2s;
+    margin-top: 10px;
+    transition: all 0.2s;
+    box-shadow: 0 0 8px var(--color-primary);
 }
+
 .action-btn:hover {
-    background-color: #FFFF00;
-    box-shadow: 0 0 10px var(--color-yellow-neon);
+    background: var(--color-background);
+    color: var(--color-primary);
+    box-shadow: 0 0 15px var(--color-primary), inset 0 0 5px var(--color-primary);
 }
-.action-btn:disabled {
-    background-color: #333;
-    color: #666;
-    cursor: not-allowed;
+
+.action-btn:active {
+    transform: translateY(1px);
+}
+
+.controls-hint {
+    margin-top: 10px;
+    font-size: 0.7rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* ------------------------------------- */
+/* MODAL / GAME OVER */
+/* ------------------------------------- */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: var(--color-background);
+    border: 3px solid var(--color-primary); 
+    box-shadow: 0 0 20px var(--color-primary);
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    max-width: 400px;
+    transform: scale(0.95);
+    animation: fade-in 0.3s forwards;
+}
+
+.modal-content h2 {
+    color: var(--color-primary); 
+    text-shadow: var(--shadow-neon);
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+}
+
+#modal-message {
+    font-size: 1.2rem;
+    margin-bottom: 25px;
+    color: var(--color-text);
+}
+
+#modal-score {
+    color: var(--color-secondary); 
+    font-weight: 700;
+    text-shadow: var(--shadow-active);
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+@keyframes fade-in {
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* ------------------------------------- */
+/* MEDIA QUERIES (Responsif) */
+/* ------------------------------------- */
+
+@media (max-width: 600px) {
+    .game-container {
+        flex-direction: column;
+        gap: 15px;
+        padding: 10px;
+        align-items: center;
+    }
+
+    #game-board {
+        width: 250px; 
+        height: 500px; 
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(20, 1fr);
+    }
+    
+    .cell {
+        width: 25px;
+        height: 25px;
+    }
+
+    .info-panel {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-around;
+        gap: 10px;
+        padding: 0;
+    }
+    
+    .score-box {
+        flex: 1;
+        text-align: center;
+    }
+    
+    #next-piece-container {
+        display: none; 
+    }
+
+    .game-controls {
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .system-header, .system-footer {
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+    }
+
+    .controls-hint {
+        display: none;
+    }
 }
